@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Congiuntura Agent — European economic outlook, agentified</title>
+  <meta name="description" content="Open Agentic Web version of Congiuntura Live: a browser-run assistant answers questions about European economic outlook press releases and upcoming statistical releases.">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="script.js"></script>
+  <script type="module" src="site.js"></script>
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>📊 Congiuntura Agent</h1>
+      <p>
+        European economic outlook from official press releases —
+        Eurostat · Istat · INE · INSEE · Destatis · CSO · DG EcoFin.
+        The <a href="https://congiuntura.by.gg8.eu/">human site</a> has the full feed archive;
+        this page adds a browser-run assistant.
+        <span id="freshness" class="freshness"></span>
+      </p>
+    </header>
+
+    <section aria-label="Filters">
+      <div class="filters">
+        <label>Topic <select id="f-topic"></select></label>
+        <label>Country <select id="f-country"></select></label>
+        <label>Sentiment <select id="f-sentiment"></select></label>
+        <label>Agency <select id="f-publisher"></select></label>
+        <label>From <input type="date" id="f-from"></label>
+        <label>To <input type="date" id="f-to"></label>
+        <button id="f-clear" class="outline">Clear</button>
+      </div>
+      <p id="stats" role="status" class="stats">Loading…</p>
+    </section>
+
+    <section id="releases" aria-label="Press releases" class="releases"></section>
+
+    <section id="assistant" class="assistant" aria-labelledby="assistant-heading">
+      <h2 id="assistant-heading">Ask the outlook assistant</h2>
+      <p>Ask about the latest data signals, the mood across agencies, upcoming releases — or ask it to filter this page ("show me only negative Italy labour releases").</p>
+      <p class="assistant-note">Your messages and this page's data go to the LLM provider you choose in the settings below; the site never sees your key and pays nothing. You confirm anything that cannot be undone before it happens.</p>
+      <p id="assistant-status" role="status">Connecting the assistant… If this message stays, the assistant could not load. You can still use the page directly.</p>
+      <div id="agent-app">
+        <div data-ns-slot="header"></div>
+        <div class="assistant-panels">
+          <div data-ns-slot="chat"></div>
+          <div data-ns-slot="agents"></div>
+        </div>
+        <div data-ns-slot="settings"></div>
+      </div>
+    </section>
+
+    <footer>
+      <p class="muted">
+        Part of the <a href="https://github.com/paluigi-moltis/congiuntura-agent">congiuntura-agent</a>
+        project (Open Agentic Web Challenge). Agent network:
+        <a href="/agent-manifest.json">agent-manifest.json</a> ·
+        <a href="/congiuntura_outlook.network.json">congiuntura_outlook.network.json</a>.
+        Other agentic sites may load and run this network with their visitors' consent (open peers).
+      </p>
+    </footer>
+  </main>
+</body>
+</html>

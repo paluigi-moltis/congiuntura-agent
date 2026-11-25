@@ -1,0 +1,82 @@
+{
+  "brand": "Congiuntura Outlook Assistant",
+  "networks": [
+    {
+      "name": "congiuntura_outlook",
+      "front_man": "outlook_assistant",
+      "hocon": "./congiuntura_outlook.network.json",
+      "description": "Ask questions about the European economic outlook — press releases from six statistical agencies and the calendar of upcoming releases.",
+      "tags": [
+        "agentified-website",
+        "economics",
+        "official-statistics"
+      ],
+      "sample_queries": [
+        "What is the latest signal on euro-area inflation?",
+        "Any negative labour-market news from Germany this month?",
+        "Which statistical releases are due in the next week?",
+        "How is the mood across agencies this month — more positive or negative releases?",
+        "What were the previous and forecast values for upcoming euro-area events?",
+        "What was Italy's GDP growth in 2019?"
+      ]
+    }
+  ],
+  "llm_router": {
+    "base_url": "https://api.otari.ai/api/v1",
+    "mock": false,
+    "byok_router": "https://api.otari.ai/api/v1"
+  },
+  "allowed_peers": [
+    "https://congiuntura.by.gg8.eu"
+  ],
+  "peer_policy": {
+    "mode": "open",
+    "deny_origins": [],
+    "note": "Open peers: other agentic sites may load and run this network with their visitors' consent and keys (Open Agentic Web Challenge)."
+  },
+  "agent_mcp": {
+    "protocol": "nsdeploy-agent-mcp/v1",
+    "network": "congiuntura_outlook",
+    "front_man": "outlook_assistant",
+    "available": false,
+    "reason": "This is a static bundle; a public MCP facade requires an application host. The network's data tools live at https://congiuntura.by.gg8.eu/mcp (read-only)."
+  },
+  "theme": {
+    "primary": "#1e6b52"
+  },
+  "linking": {
+    "protocol": "nsdeploy-link/v1",
+    "exports": [
+      {
+        "network": "congiuntura_outlook",
+        "front_man": "outlook_assistant",
+        "aliases": [
+          "congiuntura_outlook",
+          "outlook_assistant"
+        ],
+        "url": "congiuntura_outlook"
+      }
+    ],
+    "imports": [],
+    "link_updates": {
+      "mode": "browser-local"
+    }
+  },
+  "deployment": {
+    "mode": "static",
+    "self_contained_runtime": true,
+    "browser_mock": false,
+    "direct_byok": true,
+    "direct_mcp_requires_cors": true,
+    "public_mcp_facade": false
+  },
+  "actions": {
+    "version": 1,
+    "module": "./site-actions.js",
+    "bridge": "./bridge/action-bridge.html",
+    "agentTools": [
+      "get_site_state",
+      "filter_releases"
+    ]
+  }
+}

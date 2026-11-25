@@ -1,14 +1,13 @@
 # 🤖 congiuntura-agent
 
-**The Open Agentic Web version of [Congiuntura Live](https://congiuntura.by.gg8.eu/)** — a browser-run multi-agent assistant that answers questions about the European economic outlook, grounded in live press-release data from six official statistical agencies (Eurostat, Istat, INE, INSEE, Destatis, CSO).
+**The Open Agentic Web version of [Congiuntura Live](https://congiuntura.by.gg8.eu/)** — a browser-run multi-agent assistant that answers questions about the European economic outlook, grounded in live press-release data from six official statistical agencies (Eurostat, Istat, INE, INSEE, Destatis, CSO) plus DG EcoFin.
 
 Built for the [Open Agentic Web Challenge](https://cognizant-agenticweb.devpost.com/) (Cognizant AI Lab · MIT NANDA · Mozilla Otari · AWS).
 
 > 🔗 **Live site:** https://congiuntura-agent.by.gg8.eu
 > 📊 **Human site:** https://congiuntura.by.gg8.eu (repo: [paluigi/congiuntura-live](https://github.com/paluigi/congiuntura-live))
-> 📋 **Spec:** [Worldwide Agentic Web MVP Specification](https://github.com/cognizant-ai-labs/agentic-web/blob/main/docs/worldwide_agentic_web_mvp_spec.md)
-
----
+> 📋 **Spec:** [Worldwide Agentic Web MVP Specification](https://github.com/cognizant-ai-labs/agentic-web/blob/main/docs/worldwide_agentic_web_mvp_spec.md) (Profile 0.3, 18 Nov 2026)
+> 🔨 **Built with:** the [agentify-website skill](https://github.com/cognizant-ai-labs/agentic-web/tree/main/skills/agentify-website) of `cognizant-ai-labs/agentic-web` at commit `370dc3f` (Merge PR #83). Node 22 for the build/tests.
 
 ## What visitors can do
 
@@ -20,50 +19,84 @@ Ask questions like:
 - *"Which euro-area releases are due this week? What were the previous values?"*
 - *"Show me only negative Italy retail-trade releases"* — the agent drives the site's own filters
 
+And one it declines honestly (the site stores press releases, not data tables):
+
+- *"What was Italy's GDP growth in 2019?"* → answered only if a tool result contains it
+
 Every answer cites the underlying press releases (agency, date, link).
 
 ## How it works
 
 ```
 visitor's browser
-├── agentified dashboard (static HTML/JS + chat assistant)
-├── browser runtime (nsdeploy-derived) runs the agent network locally
-│     ├── outlook_assistant (front agent)
+├── agentified dashboard (static HTML/JS: releases + filters, fed by MCP reads)
+├── browser runtime (nsdeploy-derived, copied from the agentify-website skill)
+│     ├── outlook_assistant (front agent: routes, synthesizes, cites, CRUSE tables)
 │     ├── releases_specialist ──┐
-│     └── calendar_specialist ──┤  MCP (read-only) → congiuntura-live API
-│                               ┘        → MongoDB congiuntura DB
-└── visitor's own LLM key (BYOK) — the site never pays for inference
+│     │                         ├─ MCP (read-only) → https://congiuntura.by.gg8.eu/mcp
+│     └── calendar_specialist ──┘        → MongoDB congiuntura (read-only user)
+└── visitor's own LLM key (BYOK) — the site never sees it, never pays for inference
 ```
 
-- **Network runs in the browser**: the agent graph is published as data (`congiuntura_outlook.network.json`, Neuro SAN HOCON profile) — no server-side agent code.
-- **BYOK first**: visitors paste their own key (OpenRouter, OpenAI-compatible endpoints; Otari-hosted supported). The key stays in the browser, attached only to model requests.
-- **Read-only MCP grounding**: answers come from a read-only MCP server on the existing congiuntura-live app, using a dedicated read-only MongoDB user.
-- **Open peers**: `peer_policy: "open"` — other agentic websites can load and run this network in *their* visitors' browsers, after consent.
+- **Network runs in the browser**: the agent graph is published data (`congiuntura_outlook.network.json`, Neuro SAN HOCON profile, 3 agents, plain delegation) — no server-side agent code.
+- **BYOK first**: visitors pick a provider in ⚙ AI model settings (OpenRouter connect, Otari, or any OpenAI-compatible URL). The key stays in the browser. A funded Otari default can be switched on later by editing the manifest only — see `deploy/README.md`.
+- **Read-only MCP grounding**: all data comes from a read-only MCP server on congiuntura-live (`search_releases`, `get_latest_releases`, `sentiment_summary`, `get_upcoming_releases`, `get_ff_events`, `get_pipeline_status`), backed by a read-only MongoDB user. The visitor consents before the first contact with that origin.
+- **Open peers**: `peer_policy: "open"` — other agentic websites can load and run this network in *their* visitors' browsers (consent-gated, visitor-funded).
+- **Site actions**: `website_get_site_state` (read) and `website_filter_releases` (reversible write) let the agent drive the page's filters. Nothing irreversible — no confirmation dialogs needed.
 
-## What this repo contains
+## Repository layout
 
 | Path | Purpose |
 |---|---|
-| `site/` | The agentified dashboard: `index.html`, `site.js`, `site-actions.js`, assistant CSS |
-| `site/agent-manifest.json` | Public manifest: network name, front agent, hocon pointer, peer policy, sample queries |
-| `site/congiuntura_outlook.hocon` | Authoring source of the agent network (built artifact: `.network.json`) |
-| `site/links.json` | Peer-network link map |
-| `site/runtime/` | Browser runtime (from the [agentic-web](https://github.com/cognizant-ai-labs/agentic-web) `agentify-website` skill) |
-| `site/bridge/` | Action bridge for other agent sites calling this network |
-| `deploy/` | nginx container + compose service + reverse-proxy notes |
-| `tests/` | Node tests from the agentify skill (call budget, manifest consistency, validator) |
+| `site/index.html` | The agentified dashboard page |
+| `site/script.js` | Dashboard logic + MCP client; exports `App.page` shared by visitor UI and agent actions |
+| `site/site.js` | Boots the assistant (adapted from the skill's template; no irreversible dialogs) |
+| `site/site-actions.js` | Registers `get_site_state` + `filter_releases` as `website_*` tools |
+| `site/congiuntura_outlook.hocon` | Source of truth for the agent network (3 agents) |
+| `site/congiuntura_outlook.network.json` | Generated by `build_network.mjs` — do not edit by hand |
+| `site/agent-manifest.json` | Public manifest: network, front agent, peer policy, sample queries |
+| `site/links.json`, `site/agent-mcp.json`, `site/.well-known/` | Peer links + discovery (generated) |
+| `site/bridge/` | Action bridge other agent sites load (generated; shares no actions) |
+| `site/runtime/` | Browser runtime, copied unchanged from the skill |
+| `site/tests/` | Node tests: real runtime + real page code with a scripted model |
+| `deploy/` | nginx config, compose service, "Otari later" switch |
 
-*(paths materialize as phases land — see the implementation plan)*
+## Build & test
+
+Requires Node ≥ 22.
+
+```bash
+# rebuild the network after editing the HOCON or the manifest
+cd site
+node <path-to>/agentic-web/skills/agentify-website/scripts/build_network.mjs \
+  congiuntura_outlook.hocon --manifest agent-manifest.json
+
+# run the tests (scripted model, no provider calls)
+node --test tests/agentified.test.mjs
+
+# serve locally (127.0.0.1)
+node <path-to>/agentic-web/skills/agentify-website/scripts/serve_site.mjs . --port 8080
+```
+
+Local data: the dashboard and the agents call the production MCP (`https://congiuntura.by.gg8.eu/mcp`),
+whose CORS also allows `http://localhost:*`, so a local serve works against live data.
+
+**Trying your own key:** open ⚙ AI model settings, connect a provider (OpenRouter/Otari) or
+paste a key, then **Save and start**. To forget it later: **Advanced settings → Delete setup**,
+then close the tab. On `localhost` the runtime mirrors setups into a cookie — use a key with a
+low spending limit when testing locally.
+
+**Privacy note:** the assistant sends your chat messages and the page data it reads to the LLM
+provider you choose. The site host never sees your key. Other agent sites that call this network
+get no `website_*` tools — their assistant points visitors at this site's page.
 
 ## Status
 
-🚧 Work in progress for the hackathon deadline. Phases:
-
-- [ ] Phase 1 — read-only MCP server in congiuntura-live
-- [ ] Phase 2 — agentified static bundle (this repo)
+- [x] Phase 1 — read-only MCP server in congiuntura-live (PR: paluigi/congiuntura-live#2)
+- [x] Phase 2 — agentified static bundle (this repo)
 - [ ] Phase 3 — deploy at congiuntura-agent.by.gg8.eu
 - [ ] Phase 4 — submission (video, screenshots, devpost)
 
 ## License
 
-MIT
+MIT. The `site/runtime/` folder is Apache 2.0 (nsdeploy, see its `LICENSE.txt`).

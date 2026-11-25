@@ -1,0 +1,18 @@
+{
+  "protocol": "nsdeploy-link/v1",
+  "exports": [
+    {
+      "network": "congiuntura_outlook",
+      "front_man": "outlook_assistant",
+      "aliases": [
+        "congiuntura_outlook",
+        "outlook_assistant"
+      ],
+      "url": "congiuntura_outlook"
+    }
+  ],
+  "imports": [],
+  "link_updates": {
+    "mode": "browser-local"
+  }
+}

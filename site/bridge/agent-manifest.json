@@ -1,0 +1,10 @@
+{
+  "networks": [
+    {
+      "name": "congiuntura_outlook"
+    }
+  ],
+  "actions": {
+    "version": 1
+  }
+}

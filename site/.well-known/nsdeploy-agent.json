@@ -1,0 +1,7 @@
+{
+  "protocol": "nsdeploy-agent-mcp/v1",
+  "network": "congiuntura_outlook",
+  "front_man": "outlook_assistant",
+  "available": false,
+  "reason": "This is a static bundle; a public MCP facade requires an application host. The network's data tools live at https://congiuntura.by.gg8.eu/mcp (read-only)."
+}
